@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User App - Financial Management System</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .app-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .app-header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .app-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .user-uid {
+            background: rgba(255,255,255,0.2);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        
+        .bottom-nav {
+            display: flex;
+            background: white;
+            border-top: 1px solid #eee;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px 5px;
+            color: #777;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 3px;
+            display: block;
+        }
+        
+        .app-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 15px;
+        }
+        
+        .balance-card {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .balance-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .balance-amount {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .balance-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .balance-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .balance-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            background: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .action-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .action-label {
+            font-size: 12px;
+            color: #555;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 25px;
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .auth-tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .transaction-details {
+            flex: 1;
+        }
+        
+        .transaction-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .transaction-date {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .transaction-amount {
+            font-weight: 600;
+        }
+        
+        .amount-positive {
+            color: var(--success);
+        }
+        
+        .amount-negative {
+            color: var(--danger);
+        }
+        
+        .amount-pending {
+            color: var(--warning);
+        }
+        
+        .team-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #777;
+        }
+        
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .team-member {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .member-info {
+            flex: 1;
+        }
+        
+        .member-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .member-uid {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .member-status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: #e8f5e8;
+            color: var(--success);
+        }
+        
+        .whatsapp-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .whatsapp-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #25D366;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+        }
+        
+        .investment-plans {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .investment-plan {
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+        
+        .investment-plan.featured {
+            border-color: var(--primary);
+            background: #f8faff;
+        }
+        
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .plan-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .plan-roi {
+            background: var(--success);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .plan-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .plan-detail {
+            text-align: center;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 3px;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .commission-levels {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .commission-level {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .level-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .level-rate {
+            font-size: 14px;
+            color: var(--success);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="auth-section" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h2>Financial App</h2>
+                <p>Manage your finances easily</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="login-tab">Login</div>
+                <div class="auth-tab" id="signup-tab">Sign Up</div>
+                <div class="auth-tab" id="forgot-tab">Forgot</div>
+            </div>
+            
+            <div id="login-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" class="form-control" placeholder="Enter username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter password">
+                </div>
+                
+                <button class="btn btn-primary btn-block" id="login-btn">Login</button>
+                
+                <div id="login-message" style="margin-top: 15px; text-align: center;"></div>
+            </div>
+            
+            <div id="signup-form" class="hidden">
+                <div class="form-group">
+                    <label for="signup-username">Username *</label>
+                    <input type="text" id="signup-username" class="form-control" placeholder="Choose username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-password">Password *</label>
+                    <input type="password" id="signup-password" class="form-control" placeholder="Create password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-fullname">Full Name *</label>
+                    <input type="text" id="signup-fullname" class="form-control" placeholder="Enter full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-phone">Phone *</label>
+                    <input type="text" id="signup-phone" class="form-control" placeholder="Enter phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label for="signup-referral">Referral Code (Optional)</label>
+                    <input type="text" id="signup-referral" class="form-control" placeholder="Enter referral code">
+                </div>
+                
+                <button class="btn btn-success btn-block" id="signup-btn">Create Account</button>
+                
+                <div id="signup-message" style="margin-top: 15px; text-align: center;"></div>
+            </div>
+            
+            <div id="forgot-form" class="hidden">
+                <div class="form-group">
+                    <label for="forgot-username">Username</label>
+                    <input type="text" id="forgot-username" class="form-control" placeholder="Enter username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="forgot-phone">Phone Number</label>
+                    <input type="text" id="forgot-phone" class="form-control" placeholder="Enter registered phone">
+                </div>
+                
+                <button class="btn btn-primary btn-block" id="reset-btn">Reset Password</button>
+                
+                <div id="forgot-message" style="margin-top: 15px; text-align: center;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="app-section" class="app-container hidden">
+        <div class="app-header">
+            <h1 id="app-title">Dashboard</h1>
+            <p id="user-greeting">Welcome back!</p>
+            <div class="user-info">
+                <div>Your UID: <span class="user-uid" id="user-uid-display">Loading...</span></div>
+                <a href="https://wa.me/+994400563737" class="btn-whatsapp" style="padding: 5px 10px; font-size: 12px; border-radius: 15px; text-decoration: none;">WhatsApp</a>
+            </div>
+        </div>
+        
+        <div class="app-content">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="section active">
+                <div class="balance-card">
+                    <div class="balance-label">Your Balance</div>
+                    <div class="balance-amount" id="user-balance">$0.00</div>
+                    <div class="balance-actions">
+                        <button class="balance-btn" data-action="deposit">Deposit</button>
+                        <button class="balance-btn" data-action="withdraw">Withdraw</button>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <button class="action-btn" data-section="deposits">
+                        <span class="action-icon">💰</span>
+                        <span class="action-label">Deposit</span>
+                    </button>
+                    <button class="action-btn" data-section="withdrawals">
+                        <span class="action-icon">💳</span>
+                        <span class="action-label">Withdraw</span>
+                    </button>
+                    <button class="action-btn" data-section="my-team">
+                        <span class="action-icon">👥</span>
+                        <span class="action-label">My Team</span>
+                    </button>
+                    <button class="action-btn" data-section="investments">
+                        <span class="action-icon">📈</span>
+                        <span class="action-label">Invest</span>
+                    </button>
+                </div>
+                
+                <div class="whatsapp-section">
+                    <a href="https://wa.me/+994400563737" class="whatsapp-btn">
+                        <span>Contact Support on WhatsApp</span>
+                    </a>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Recent Transactions</div>
+                    <div class="card-body">
+                        <div id="recent-transactions">
+                            <div class="empty-state">
+                                <div class="icon">📊</div>
+                                <div>No transactions yet</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your transactions will appear here</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Quick Stats</div>
+                    <div class="card-body">
+                        <div class="team-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="direct-referrals">0</div>
+                                <div class="stat-label">Direct Referrals</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="total-team">0</div>
+                                <div class="stat-label">Total Team</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="monthly-commission">$0</div>
+                                <div class="stat-label">Monthly Commission</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="current-rank">1</div>
+                                <div class="stat-label">Current Rank</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Deposits Section -->
+            <div id="deposits-section" class="section">
+                <div class="card">
+                    <div class="card-header">Make a Deposit</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="deposit-amount">Amount ($)</label>
+                            <input type="number" id="deposit-amount" class="form-control" placeholder="Enter amount" min="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="deposit-method">Payment Method</label>
+                            <select id="deposit-method" class="form-control">
+                                <option value="bank">Bank Transfer</option>
+                                <option value="card">Credit/Debit Card</option>
+                                <option value="digital">Digital Wallet</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-block" id="submit-deposit">Submit Deposit Request</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Deposit History</div>
+                    <div class="card-body">
+                        <div id="deposit-history">
+                            <div class="empty-state">
+                                <div class="icon">💰</div>
+                                <div>No deposit history</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your deposit requests will appear here</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Withdrawals Section -->
+            <div id="withdrawals-section" class="section">
+                <div class="card">
+                    <div class="card-header">Request Withdrawal</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="withdrawal-amount">Amount ($)</label>
+                            <input type="number" id="withdrawal-amount" class="form-control" placeholder="Enter amount" min="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="withdrawal-method">Withdrawal Method</label>
+                            <select id="withdrawal-method" class="form-control">
+                                <option value="bank">Bank Transfer</option>
+                                <option value="digital">Digital Wallet</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-block" id="submit-withdrawal">Submit Withdrawal Request</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Withdrawal History</div>
+                    <div class="card-body">
+                        <div id="withdrawal-history">
+                            <div class="empty-state">
+                                <div class="icon">💳</div>
+                                <div>No withdrawal history</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your withdrawal requests will appear here</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Investments Section -->
+            <div id="investments-section" class="section">
+                <div class="card">
+                    <div class="card-header">Available Investment Plans</div>
+                    <div class="card-body">
+                        <div class="investment-plans" id="investment-plans-list">
+                            <!-- Investment plans will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">My Investments</div>
+                    <div class="card-body">
+                        <div id="my-investments">
+                            <div class="empty-state">
+                                <div class="icon">📈</div>
+                                <div>No active investments</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your investments will appear here</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- My Team Section -->
+            <div id="my-team-section" class="section">
+                <div class="card">
+                    <div class="card-header">Team Overview</div>
+                    <div class="card-body">
+                        <div class="team-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="team-direct">0</div>
+                                <div class="stat-label">Direct Referrals</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="team-total">0</div>
+                                <div class="stat-label">Total Team</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="team-active">0</div>
+                                <div class="stat-label">Active Members</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="team-commission">$0</div>
+                                <div class="stat-label">Total Commission</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Commission Structure</div>
+                    <div class="card-body">
+                        <div class="commission-levels">
+                            <div class="commission-level">
+                                <div class="level-number">Level 1</div>
+                                <div class="level-rate" id="level1-rate">10%</div>
+                                <div style="font-size: 12px; color: #777;">Direct Referrals</div>
+                            </div>
+                            <div class="commission-level">
+                                <div class="level-number">Level 2</div>
+                                <div class="level-rate" id="level2-rate">5%</div>
+                                <div style="font-size: 12px; color: #777;">Team's Referrals</div>
+                            </div>
+                            <div class="commission-level">
+                                <div class="level-number">Level 3</div>
+                                <div class="level-rate" id="level3-rate">2%</div>
+                                <div style="font-size: 12px; color: #777;">Extended Team</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Your Referral Code</div>
+                    <div class="card-body">
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <div style="font-size: 18px; font-weight: bold; letter-spacing: 2px; background: #f8f9fa; padding: 10px; border-radius: 8px;" id="referral-code">LOADING...</div>
+                        </div>
+                        <button class="btn btn-primary btn-block" id="copy-referral">Copy Referral Link</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Team Members</div>
+                    <div class="card-body">
+                        <div id="team-members">
+                            <div class="empty-state">
+                                <div class="icon">👥</div>
+                                <div>No team members yet</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Share your referral code to build your team</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Salary Section -->
+            <div id="salary-section" class="section">
+                <div class="card">
+                    <div class="card-header">Salary Information</div>
+                    <div class="card-body">
+                        <div class="team-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="salary-current">$0</div>
+                                <div class="stat-label">Current Salary</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="salary-next">--</div>
+                                <div class="stat-label">Next Payment</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Salary History</div>
+                    <div class="card-body">
+                        <div id="salary-history">
+                            <div class="empty-state">
+                                <div class="icon">💵</div>
+                                <div>No salary history</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your salary payments will appear here</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Section -->
+            <div id="profile-section" class="section">
+                <div class="card">
+                    <div class="card-header">Personal Information</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="profile-fullname">Full Name</label>
+                            <input type="text" id="profile-fullname" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-phone">Phone</label>
+                            <input type="text" id="profile-phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Your UID</label>
+                            <input type="text" class="form-control" id="profile-uid" readonly style="background: #f8f9fa;">
+                        </div>
+                        <button class="btn btn-primary btn-block" id="save-profile">Save Changes</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Security</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm New Password</label>
+                            <input type="password" id="confirm-password" class="form-control">
+                        </div>
+                        <button class="btn btn-primary btn-block" id="change-password">Change Password</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <button class="btn btn-danger btn-block" id="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="#" class="nav-item active" data-section="dashboard">
+                <span class="nav-icon">🏠</span>
+                <span>Home</span>
+            </a>
+            <a href="#" class="nav-item" data-section="deposits">
+                <span class="nav-icon">💰</span>
+                <span>Deposits</span>
+            </a>
+            <a href="#" class="nav-item" data-section="withdrawals">
+                <span class="nav-icon">💳</span>
+                <span>Withdraw</span>
+            </a>
+            <a href="#" class="nav-item" data-section="my-team">
+                <span class="nav-icon">👥</span>
+                <span>My Team</span>
+            </a>
+            <a href="#" class="nav-item" data-section="profile">
+                <span class="nav-icon">👤</span>
+                <span>Profile</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Investment Modal -->
+    <div id="investment-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="width: 90%; max-width: 400px;">
+            <div class="modal-header">
+                <h3 id="investment-modal-title">Invest in Plan</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="investment-amount">Investment Amount ($)</label>
+                    <input type="number" id="investment-amount" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Plan Details</label>
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 14px;">
+                        <div><strong>ROI:</strong> <span id="modal-roi">0%</span></div>
+                        <div><strong>Duration:</strong> <span id="modal-duration">0 days</span></div>
+                        <div><strong>Expected Return:</strong> $<span id="modal-return">0</span></div>
+                    </div>
+                </div>
+                <button class="btn btn-success btn-block" id="confirm-investment">Confirm Investment</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4mFCNqKcP6Fj6oO5X7V8bw9ZvQ1rT2sU",
+            authDomain: "income-genrator.firebaseapp.com",
+            databaseURL: "https://income-genrator-default-rtdb.firebaseio.com",
+            projectId: "income-genrator",
+            storageBucket: "income-genrator.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // DOM Elements
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const forgotForm = document.getElementById('forgot-form');
+        const loginTab = document.getElementById('login-tab');
+        const signupTab = document.getElementById('signup-tab');
+        const forgotTab = document.getElementById('forgot-tab');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section');
+        const actionButtons = document.querySelectorAll('.action-btn');
+        const appTitle = document.getElementById('app-title');
+        const userGreeting = document.getElementById('user-greeting');
+        const userUidDisplay = document.getElementById('user-uid-display');
+        const investmentModal = document.getElementById('investment-modal');
+        const modalClose = document.querySelector('.modal-close');
+        
+        // Current User Data
+        let currentUser = null;
+        let currentUserData = null;
+        let currentInvestmentPlan = null;
+        
+        // Tab Switching
+        loginTab.addEventListener('click', () => {
+            setActiveAuthTab('login');
+        });
+        
+        signupTab.addEventListener('click', () => {
+            setActiveAuthTab('signup');
+        });
+        
+        forgotTab.addEventListener('click', () => {
+            setActiveAuthTab('forgot');
+        });
+        
+        function setActiveAuthTab(tab) {
+            loginTab.classList.remove('active');
+            signupTab.classList.remove('active');
+            forgotTab.classList.remove('active');
+            
+            loginForm.classList.add('hidden');
+            signupForm.classList.add('hidden');
+            forgotForm.classList.add('hidden');
+            
+            if (tab === 'login') {
+                loginTab.classList.add('active');
+                loginForm.classList.remove('hidden');
+            } else if (tab === 'signup') {
+                signupTab.classList.add('active');
+                signupForm.classList.remove('hidden');
+            } else if (tab === 'forgot') {
+                forgotTab.classList.add('active');
+                forgotForm.classList.remove('hidden');
+            }
+        }
+        
+        // User Login
+        loginBtn.addEventListener('click', () => {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const messageDiv = document.getElementById('login-message');
+            
+            if (!username || !password) {
+                messageDiv.innerHTML = '<span style="color: red;">Please fill all fields</span>';
+                return;
+            }
+            
+            // Find user in database
+            database.ref('users').orderByChild('username').equalTo(username).once('value')
+                .then((snapshot) => {
+                    const users = snapshot.val();
+                    if (users) {
+                        const userId = Object.keys(users)[0];
+                        const user = users[userId];
+                        
+                        if (user.password === password) {
+                            if (user.status === 'active') {
+                                currentUser = userId;
+                                currentUserData = user;
+                                messageDiv.innerHTML = '<span style="color: green;">Login successful!</span>';
+                                
+                                setTimeout(() => {
+                                    authSection.classList.add('hidden');
+                                    appSection.classList.remove('hidden');
+                                    loadUserData();
+                                }, 1000);
+                            } else {
+                                messageDiv.innerHTML = '<span style="color: red;">Your account is disabled. Contact admin.</span>';
+                            }
+                        } else {
+                            messageDiv.innerHTML = '<span style="color: red;">Invalid password</span>';
+                        }
+                    } else {
+                        messageDiv.innerHTML = '<span style="color: red;">User not found</span>';
+                    }
+                })
+                .catch((error) => {
+                    messageDiv.innerHTML = '<span style="color: red;">Login error: ' + error.message + '</span>';
+                });
+        });
+        
+        // User Sign Up
+        signupBtn.addEventListener('click', () => {
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            const fullName = document.getElementById('signup-fullname').value;
+            const phone = document.getElementById('signup-phone').value;
+            const referralCode = document.getElementById('signup-referral').value;
+            const messageDiv = document.getElementById('signup-message');
+            
+            if (!username || !password || !fullName || !phone) {
+                messageDiv.innerHTML = '<span style="color: red;">Please fill all required fields</span>';
+                return;
+            }
+            
+            // Check if username already exists
+            database.ref('users').orderByChild('username').equalTo(username).once('value')
+                .then((snapshot) => {
+                    if (snapshot.exists()) {
+                        messageDiv.innerHTML = '<span style="color: red;">Username already exists</span>';
+                        return;
+                    }
+                    
+                    // Generate unique UID
+                    const uid = '1' + Date.now().toString().substring(4, 11);
+                    
+                    const userData = {
+                        uid: uid,
+                        username: username,
+                        password: password,
+                        fullName: fullName,
+                        phone: phone,
+                        balance: 0,
+                        referralCode: generateReferralCode(),
+                        referredBy: referralCode || null,
+                        teamSize: 0,
+                        totalDeposits: 0,
+                        totalWithdrawals: 0,
+                        totalCommission: 0,
+                        status: 'active',
+                        created_at: Date.now()
+                    };
+                    
+                    // Save user to database
+                    return database.ref('users/' + uid).set(userData);
+                })
+                .then(() => {
+                    messageDiv.innerHTML = '<span style="color: green;">Account created successfully!</span>';
+                    
+                    // Clear form
+                    document.getElementById('signup-username').value = '';
+                    document.getElementById('signup-password').value = '';
+                    document.getElementById('signup-fullname').value = '';
+                    document.getElementById('signup-phone').value = '';
+                    document.getElementById('signup-referral').value = '';
+                    
+                    // Switch to login tab
+                    setTimeout(() => {
+                        setActiveAuthTab('login');
+                    }, 1500);
+                })
+                .catch((error) => {
+                    messageDiv.innerHTML = '<span style="color: red;">Error: ' + error.message + '</span>';
+                });
+        });
+        
+        // Password Reset
+        resetBtn.addEventListener('click', () => {
+            const username = document.getElementById('forgot-username').value;
+            const phone = document.getElementById('forgot-phone').value;
+            const messageDiv = document.getElementById('forgot-message');
+            
+            if (!username || !phone) {
+                messageDiv.innerHTML = '<span style="color: red;">Please fill all fields</span>';
+                return;
+            }
+            
+            // Find user and verify phone
+            database.ref('users').orderByChild('username').equalTo(username).once('value')
+                .then((snapshot) => {
+                    const users = snapshot.val();
+                    if (users) {
+                        const userId = Object.keys(users)[0];
+                        const user = users[userId];
+                        
+                        if (user.phone === phone) {
+                            messageDiv.innerHTML = '<span style="color: green;">Password reset instructions sent to your phone.</span>';
+                        } else {
+                            messageDiv.innerHTML = '<span style="color: red;">Phone number does not match</span>';
+                        }
+                    } else {
+                        messageDiv.innerHTML = '<span style="color: red;">User not found</span>';
+                    }
+                });
+        });
+        
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            currentUser = null;
+            currentUserData = null;
+            authSection.classList.remove('hidden');
+            appSection.classList.add('hidden');
+        });
+        
+        // Navigation
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                const sectionId = item.getAttribute('data-section') + '-section';
+                sections.forEach(section => section.classList.remove('active'));
+                document.getElementById(sectionId).classList.add('active');
+                
+                appTitle.textContent = item.querySelector('span:not(.nav-icon)').textContent;
+                
+                if (sectionId === 'dashboard-section') {
+                    loadDashboardData();
+                } else if (sectionId === 'my-team-section') {
+                    loadTeamData();
+                } else if (sectionId === 'salary-section') {
+                    loadSalaryData();
+                } else if (sectionId === 'deposits-section') {
+                    loadDepositHistory();
+                } else if (sectionId === 'withdrawals-section') {
+                    loadWithdrawalHistory();
+                } else if (sectionId === 'investments-section') {
+                    loadInvestmentPlans();
+                }
+            });
+        });
+        
+        // Quick Action Buttons
+        actionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const section = button.getAttribute('data-section');
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                document.querySelector(`.nav-item[data-section="${section}"]`).classList.add('active');
+                
+                sections.forEach(section => section.classList.remove('active'));
+                document.getElementById(`${section}-section`).classList.add('active');
+                
+                appTitle.textContent = button.querySelector('.action-label').textContent;
+                
+                if (section === 'my-team') {
+                    loadTeamData();
+                } else if (section === 'salary') {
+                    loadSalaryData();
+                } else if (section === 'deposits') {
+                    loadDepositHistory();
+                } else if (section === 'withdrawals') {
+                    loadWithdrawalHistory();
+                } else if (section === 'investments') {
+                    loadInvestmentPlans();
+                }
+            });
+        });
+        
+        // Balance Action Buttons
+        document.querySelectorAll('.balance-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-action');
+                
+                if (action === 'deposit') {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    document.querySelector('.nav-item[data-section="deposits"]').classList.add('active');
+                    
+                    sections.forEach(section => section.classList.remove('active'));
+                    document.getElementById('deposits-section').classList.add('active');
+                    
+                    appTitle.textContent = 'Deposits';
+                } else if (action === 'withdraw') {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    document.querySelector('.nav-item[data-section="withdrawals"]').classList.add('active');
+                    
+                    sections.forEach(section => section.classList.remove('active'));
+                    document.getElementById('withdrawals-section').classList.add('active');
+                    
+                    appTitle.textContent = 'Withdraw';
+                }
+            });
+        });
+        
+        // Modal Close
+        modalClose.addEventListener('click', () => {
+            investmentModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === investmentModal) {
+                investmentModal.style.display = 'none';
+            }
+        });
+        
+        // Load User Data
+        function loadUserData() {
+            if (!currentUser) return;
+            
+            database.ref('users/' + currentUser).on('value', (snapshot) => {
+                currentUserData = snapshot.val();
+                if (currentUserData) {
+                    userGreeting.textContent = `Welcome back, ${currentUserData.fullName || currentUserData.username}!`;
+                    document.getElementById('user-balance').textContent = `$${(currentUserData.balance || 0).toFixed(2)}`;
+                    document.getElementById('profile-fullname').value = currentUserData.fullName || '';
+                    document.getElementById('profile-phone').value = currentUserData.phone || '';
+                    document.getElementById('profile-uid').value = currentUser;
+                    userUidDisplay.textContent = currentUser;
+                    
+                    loadDashboardData();
+                }
+            });
+        }
+        
+        // Load Dashboard Data
+        function loadDashboardData() {
+            if (!currentUser) return;
+            
+            // Load user stats
+            document.getElementById('direct-referrals').textContent = currentUserData.teamSize || '0';
+            document.getElementById('total-team').textContent = '0';
+            document.getElementById('monthly-commission').textContent = '$' + (currentUserData.totalCommission || '0');
+            document.getElementById('current-rank').textContent = 'Bronze';
+            
+            // Load commission rates
+            database.ref('system/commissionRates').once('value').then((snapshot) => {
+                const rates = snapshot.val();
+                if (rates) {
+                    document.getElementById('level1-rate').textContent = rates.direct + '%';
+                    document.getElementById('level2-rate').textContent = rates.level2 + '%';
+                    document.getElementById('level3-rate').textContent = rates.level3 + '%';
+                }
+            });
+            
+            // Load recent transactions
+            loadRecentTransactions();
+            
+            // Set up deposit functionality
+            document.getElementById('submit-deposit').addEventListener('click', submitDeposit);
+            
+            // Set up withdrawal functionality
+            document.getElementById('submit-withdrawal').addEventListener('click', submitWithdrawal);
+        }
+        
+        // Load Recent Transactions
+        function loadRecentTransactions() {
+            database.ref('transactions').orderByChild('timestamp').limitToLast(5).once('value')
+                .then((snapshot) => {
+                    const transactions = snapshot.val() || {};
+                    const transactionsContainer = document.getElementById('recent-transactions');
+                    
+                    if (Object.keys(transactions).length === 0) {
+                        return; // Keep empty state
+                    }
+                    
+                    transactionsContainer.innerHTML = '';
+                    
+                    Object.values(transactions).reverse().forEach(transaction => {
+                        if (transaction.userId === currentUser) {
+                            const transactionEl = document.createElement('div');
+                            transactionEl.className = 'transaction-item';
+                            
+                            const isPositive = transaction.type === 'deposit' || transaction.type === 'salary' || transaction.type === 'commission';
+                            const isPending = transaction.status === 'pending';
+                            const amountClass = isPending ? 'amount-pending' : (isPositive ? 'amount-positive' : 'amount-negative');
+                            const amountSign = isPending ? '' : (isPositive ? '+' : '-');
+                            
+                            transactionEl.innerHTML = `
+                                <div class="transaction-icon" style="background: ${isPending ? '#fff3cd' : (isPositive ? '#e8f5e8' : '#ffe8e8')};">
+                                    ${isPending ? '⏳' : (isPositive ? '📈' : '📉')}
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">${transaction.type} ${isPending ? '(Pending)' : ''}</div>
+                                    <div class="transaction-date">${new Date(transaction.timestamp).toLocaleDateString()}</div>
+                                </div>
+                                <div class="transaction-amount ${amountClass}">
+                                    ${amountSign}$${transaction.amount}
+                                </div>
+                            `;
+                            
+                            transactionsContainer.appendChild(transactionEl);
+                        }
+                    });
+                });
+        }
+        
+        // Submit Deposit
+        function submitDeposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            const method = document.getElementById('deposit-method').value;
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            // Get minimum deposit from system settings
+            database.ref('system/settings').once('value').then((snapshot) => {
+                const settings = snapshot.val() || {};
+                const minDeposit = settings.minDeposit || 10;
+                
+                if (amount < minDeposit) {
+                    alert(`Minimum deposit amount is $${minDeposit}`);
+                    return;
+                }
+                
+                const transactionId = 'T' + Date.now();
+                const transactionData = {
+                    id: transactionId,
+                    userId: currentUser,
+                    username: currentUserData.username,
+                    type: 'deposit',
+                    amount: amount,
+                    method: method,
+                    status: 'pending',
+                    timestamp: Date.now()
+                };
+                
+                database.ref('transactions/' + transactionId).set(transactionData)
+                    .then(() => {
+                        alert('Deposit request submitted successfully! Waiting for admin approval.');
+                        document.getElementById('deposit-amount').value = '';
+                        loadDepositHistory();
+                        loadRecentTransactions();
+                    })
+                    .catch((error) => {
+                        alert('Error submitting deposit: ' + error.message);
+                    });
+            });
+        }
+        
+        // Submit Withdrawal
+        function submitWithdrawal() {
+            const amount = parseFloat(document.getElementById('withdrawal-amount').value);
+            const method = document.getElementById('withdrawal-method').value;
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            // Get withdrawal limits from system settings
+            database.ref('system/settings').once('value').then((snapshot) => {
+                const settings = snapshot.val() || {};
+                const minWithdrawal = settings.minWithdrawal || 20;
+                const maxWithdrawal = settings.maxWithdrawal || 5000;
+                
+                if (amount < minWithdrawal) {
+                    alert(`Minimum withdrawal amount is $${minWithdrawal}`);
+                    return;
+                }
+                
+                if (amount > maxWithdrawal) {
+                    alert(`Maximum withdrawal amount is $${maxWithdrawal}`);
+                    return;
+                }
+                
+                if (amount > currentUserData.balance) {
+                    alert('Insufficient balance');
+                    return;
+                }
+                
+                const transactionId = 'T' + Date.now();
+                const transactionData = {
+                    id: transactionId,
+                    userId: currentUser,
+                    username: currentUserData.username,
+                    type: 'withdrawal',
+                    amount: amount,
+                    method: method,
+                    status: 'pending',
+                    timestamp: Date.now()
+                };
+                
+                database.ref('transactions/' + transactionId).set(transactionData)
+                    .then(() => {
+                        alert('Withdrawal request submitted successfully! Waiting for admin approval.');
+                        document.getElementById('withdrawal-amount').value = '';
+                        loadWithdrawalHistory();
+                        loadRecentTransactions();
+                    })
+                    .catch((error) => {
+                        alert('Error submitting withdrawal: ' + error.message);
+                    });
+            });
+        }
+        
+        // Load Deposit History
+        function loadDepositHistory() {
+            if (!currentUser) return;
+            
+            database.ref('transactions').orderByChild('timestamp').once('value')
+                .then((snapshot) => {
+                    const transactions = snapshot.val() || {};
+                    const depositHistory = document.getElementById('deposit-history');
+                    
+                    let hasDeposits = false;
+                    depositHistory.innerHTML = '';
+                    
+                    Object.values(transactions).reverse().forEach(transaction => {
+                        if (transaction.userId === currentUser && transaction.type === 'deposit') {
+                            hasDeposits = true;
+                            const transactionEl = document.createElement('div');
+                            transactionEl.className = 'transaction-item';
+                            
+                            const isPending = transaction.status === 'pending';
+                            const amountClass = isPending ? 'amount-pending' : 'amount-positive';
+                            
+                            transactionEl.innerHTML = `
+                                <div class="transaction-icon" style="background: ${isPending ? '#fff3cd' : '#e8f5e8'};">
+                                    ${isPending ? '⏳' : '💰'}
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Deposit ${isPending ? '(Pending)' : '(Approved)'}</div>
+                                    <div class="transaction-date">${new Date(transaction.timestamp).toLocaleDateString()}</div>
+                                    <div style="font-size: 12px; color: #777;">Method: ${transaction.method}</div>
+                                </div>
+                                <div class="transaction-amount ${amountClass}">
+                                    +$${transaction.amount}
+                                </div>
+                            `;
+                            
+                            depositHistory.appendChild(transactionEl);
+                        }
+                    });
+                    
+                    if (!hasDeposits) {
+                        depositHistory.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">💰</div>
+                                <div>No deposit history</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your deposit requests will appear here</div>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        // Load Withdrawal History
+        function loadWithdrawalHistory() {
+            if (!currentUser) return;
+            
+            database.ref('transactions').orderByChild('timestamp').once('value')
+                .then((snapshot) => {
+                    const transactions = snapshot.val() || {};
+                    const withdrawalHistory = document.getElementById('withdrawal-history');
+                    
+                    let hasWithdrawals = false;
+                    withdrawalHistory.innerHTML = '';
+                    
+                    Object.values(transactions).reverse().forEach(transaction => {
+                        if (transaction.userId === currentUser && transaction.type === 'withdrawal') {
+                            hasWithdrawals = true;
+                            const transactionEl = document.createElement('div');
+                            transactionEl.className = 'transaction-item';
+                            
+                            const isPending = transaction.status === 'pending';
+                            const amountClass = isPending ? 'amount-pending' : 'amount-negative';
+                            
+                            transactionEl.innerHTML = `
+                                <div class="transaction-icon" style="background: ${isPending ? '#fff3cd' : '#ffe8e8'};">
+                                    ${isPending ? '⏳' : '💳'}
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Withdrawal ${isPending ? '(Pending)' : '(Processed)'}</div>
+                                    <div class="transaction-date">${new Date(transaction.timestamp).toLocaleDateString()}</div>
+                                    <div style="font-size: 12px; color: #777;">Method: ${transaction.method}</div>
+                                </div>
+                                <div class="transaction-amount ${amountClass}">
+                                    -$${transaction.amount}
+                                </div>
+                            `;
+                            
+                            withdrawalHistory.appendChild(transactionEl);
+                        }
+                    });
+                    
+                    if (!hasWithdrawals) {
+                        withdrawalHistory.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">💳</div>
+                                <div>No withdrawal history</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your withdrawal requests will appear here</div>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        // Load Investment Plans
+        function loadInvestmentPlans() {
+            if (!currentUser) return;
+            
+            database.ref('investmentPlans').once('value').then((snapshot) => {
+                const plans = snapshot.val() || {};
+                const plansContainer = document.getElementById('investment-plans-list');
+                plansContainer.innerHTML = '';
+                
+                Object.entries(plans).forEach(([id, plan]) => {
+                    const planEl = document.createElement('div');
+                    planEl.className = 'investment-plan';
+                    planEl.innerHTML = `
+                        <div class="plan-header">
+                            <div class="plan-name">${plan.name}</div>
+                            <div class="plan-roi">${plan.roi}% ROI</div>
+                        </div>
+                        <div class="plan-details">
+                            <div class="plan-detail">
+                                <div class="detail-label">Min Investment</div>
+                                <div class="detail-value">$${plan.minAmount}</div>
+                            </div>
+                            <div class="plan-detail">
+                                <div class="detail-label">Max Investment</div>
+                                <div class="detail-value">$${plan.maxAmount}</div>
+                            </div>
+                            <div class="plan-detail">
+                                <div class="detail-label">Duration</div>
+                                <div class="detail-value">${plan.duration} days</div>
+                            </div>
+                            <div class="plan-detail">
+                                <div class="detail-label">Return</div>
+                                <div class="detail-value">${plan.roi}%</div>
+                            </div>
+                        </div>
+                        <p style="font-size: 14px; color: #666; margin: 10px 0;">${plan.description || ''}</p>
+                        <button class="btn btn-success btn-block" onclick="openInvestmentModal('${id}')">Invest Now</button>
+                    `;
+                    plansContainer.appendChild(planEl);
+                });
+            });
+            
+            // Load user's investments
+            loadMyInvestments();
+        }
+        
+        // Open Investment Modal
+        function openInvestmentModal(planId) {
+            database.ref('investmentPlans/' + planId).once('value').then((snapshot) => {
+                const plan = snapshot.val();
+                if (plan) {
+                    currentInvestmentPlan = planId;
+                    document.getElementById('investment-modal-title').textContent = `Invest in ${plan.name}`;
+                    document.getElementById('modal-roi').textContent = plan.roi + '%';
+                    document.getElementById('modal-duration').textContent = plan.duration + ' days';
+                    
+                    // Set investment amount to minimum by default
+                    document.getElementById('investment-amount').value = plan.minAmount;
+                    updateInvestmentReturn(plan.minAmount, plan.roi);
+                    
+                    // Add event listener for amount change
+                    document.getElementById('investment-amount').addEventListener('input', (e) => {
+                        updateInvestmentReturn(e.target.value, plan.roi);
+                    });
+                    
+                    investmentModal.style.display = 'flex';
+                }
+            });
+        }
+        
+        // Update Investment Return Calculation
+        function updateInvestmentReturn(amount, roi) {
+            const returnAmount = (amount * roi) / 100;
+            document.getElementById('modal-return').textContent = returnAmount.toFixed(2);
+        }
+        
+        // Confirm Investment
+        document.getElementById('confirm-investment').addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('investment-amount').value);
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid investment amount');
+                return;
+            }
+            
+            if (!currentInvestmentPlan) {
+                alert('No investment plan selected');
+                return;
+            }
+            
+            database.ref('investmentPlans/' + currentInvestmentPlan).once('value').then((snapshot) => {
+                const plan = snapshot.val();
+                if (plan) {
+                    if (amount < plan.minAmount) {
+                        alert(`Minimum investment for this plan is $${plan.minAmount}`);
+                        return;
+                    }
+                    
+                    if (amount > plan.maxAmount) {
+                        alert(`Maximum investment for this plan is $${plan.maxAmount}`);
+                        return;
+                    }
+                    
+                    if (amount > currentUserData.balance) {
+                        alert('Insufficient balance for this investment');
+                        return;
+                    }
+                    
+                    // Create investment
+                    const investmentId = 'I' + Date.now();
+                    const investmentData = {
+                        id: investmentId,
+                        userId: currentUser,
+                        planId: currentInvestmentPlan,
+                        planName: plan.name,
+                        amount: amount,
+                        roi: plan.roi,
+                        duration: plan.duration,
+                        expectedReturn: (amount * plan.roi) / 100,
+                        status: 'active',
+                        startDate: Date.now(),
+                        endDate: Date.now() + (plan.duration * 24 * 60 * 60 * 1000)
+                    };
+                    
+                    // Deduct amount from user balance
+                    const newBalance = currentUserData.balance - amount;
+                    
+                    database.ref('users/' + currentUser).update({
+                        balance: newBalance
+                    }).then(() => {
+                        return database.ref('investments/' + investmentId).set(investmentData);
+                    }).then(() => {
+                        alert('Investment created successfully!');
+                        investmentModal.style.display = 'none';
+                        loadInvestmentPlans();
+                    }).catch((error) => {
+                        alert('Error creating investment: ' + error.message);
+                    });
+                }
+            });
+        });
+        
+        // Load My Investments
+        function loadMyInvestments() {
+            if (!currentUser) return;
+            
+            database.ref('investments').orderByChild('userId').equalTo(currentUser).once('value')
+                .then((snapshot) => {
+                    const investments = snapshot.val() || {};
+                    const investmentsContainer = document.getElementById('my-investments');
+                    
+                    if (Object.keys(investments).length === 0) {
+                        investmentsContainer.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">📈</div>
+                                <div>No active investments</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your investments will appear here</div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    investmentsContainer.innerHTML = '';
+                    
+                    Object.values(investments).reverse().forEach(investment => {
+                        const investmentEl = document.createElement('div');
+                        investmentEl.className = 'investment-plan';
+                        const progress = ((Date.now() - investment.startDate) / (investment.endDate - investment.startDate)) * 100;
+                        const daysLeft = Math.ceil((investment.endDate - Date.now()) / (24 * 60 * 60 * 1000));
+                        
+                        investmentEl.innerHTML = `
+                            <div class="plan-header">
+                                <div class="plan-name">${investment.planName}</div>
+                                <div class="plan-roi">${investment.roi}% ROI</div>
+                            </div>
+                            <div class="plan-details">
+                                <div class="plan-detail">
+                                    <div class="detail-label">Amount</div>
+                                    <div class="detail-value">$${investment.amount}</div>
+                                </div>
+                                <div class="plan-detail">
+                                    <div class="detail-label">Expected Return</div>
+                                    <div class="detail-value">$${investment.expectedReturn}</div>
+                                </div>
+                                <div class="plan-detail">
+                                    <div class="detail-label">Days Left</div>
+                                    <div class="detail-value">${daysLeft}</div>
+                                </div>
+                                <div class="plan-detail">
+                                    <div class="detail-label">Status</div>
+                                    <div class="detail-value" style="color: ${investment.status === 'active' ? 'var(--success)' : 'var(--warning)'}">${investment.status}</div>
+                                </div>
+                            </div>
+                            <div style="margin: 10px 0;">
+                                <div style="background: #f0f0f0; border-radius: 10px; height: 8px; overflow: hidden;">
+                                    <div style="background: var(--success); height: 100%; width: ${Math.min(progress, 100)}%;"></div>
+                                </div>
+                                <div style="font-size: 12px; text-align: center; margin-top: 5px; color: #777;">
+                                    ${Math.min(progress, 100).toFixed(1)}% Complete
+                                </div>
+                            </div>
+                        `;
+                        investmentsContainer.appendChild(investmentEl);
+                    });
+                });
+        }
+        
+        // Load Team Data
+        function loadTeamData() {
+            if (!currentUser) return;
+            
+            // Load team stats
+            document.getElementById('team-direct').textContent = currentUserData.teamSize || '0';
+            document.getElementById('team-total').textContent = '0';
+            document.getElementById('team-active').textContent = '0';
+            document.getElementById('team-commission').textContent = '$' + (currentUserData.totalCommission || '0');
+            
+            // Display referral code
+            document.getElementById('referral-code').textContent = currentUserData.referralCode || 'N/A';
+            
+            // Copy referral code functionality
+            document.getElementById('copy-referral').addEventListener('click', () => {
+                const referralCode = document.getElementById('referral-code').textContent;
+                const tempInput = document.createElement('input');
+                tempInput.value = `https://example.com/ref/${referralCode}`;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('Referral link copied to clipboard!');
+            });
+            
+            // Load team members
+            loadTeamMembers();
+        }
+        
+        // Load Team Members
+        function loadTeamMembers() {
+            if (!currentUser) return;
+            
+            database.ref('users').once('value')
+                .then((snapshot) => {
+                    const users = snapshot.val() || {};
+                    const teamMembersContainer = document.getElementById('team-members');
+                    const currentUserReferralCode = currentUserData.referralCode;
+                    
+                    let hasTeamMembers = false;
+                    teamMembersContainer.innerHTML = '';
+                    
+                    Object.entries(users).forEach(([uid, user]) => {
+                        if (user.referredBy === currentUserReferralCode) {
+                            hasTeamMembers = true;
+                            const memberEl = document.createElement('div');
+                            memberEl.className = 'team-member';
+                            
+                            memberEl.innerHTML = `
+                                <div class="member-info">
+                                    <div class="member-name">${user.fullName || user.username}</div>
+                                    <div class="member-uid">UID: ${uid}</div>
+                                </div>
+                                <div class="member-status">Active</div>
+                            `;
+                            
+                            teamMembersContainer.appendChild(memberEl);
+                        }
+                    });
+                    
+                    if (!hasTeamMembers) {
+                        teamMembersContainer.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">👥</div>
+                                <div>No team members yet</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Share your referral code to build your team</div>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        // Load Salary Data
+        function loadSalaryData() {
+            if (!currentUser) return;
+            
+            document.getElementById('salary-current').textContent = '$0';
+            document.getElementById('salary-next').textContent = '--';
+            
+            // Load salary history
+            database.ref('transactions').orderByChild('timestamp').once('value')
+                .then((snapshot) => {
+                    const transactions = snapshot.val() || {};
+                    const salaryHistory = document.getElementById('salary-history');
+                    
+                    let hasSalary = false;
+                    salaryHistory.innerHTML = '';
+                    
+                    Object.values(transactions).reverse().forEach(transaction => {
+                        if (transaction.userId === currentUser && transaction.type === 'salary') {
+                            hasSalary = true;
+                            const transactionEl = document.createElement('div');
+                            transactionEl.className = 'transaction-item';
+                            
+                            transactionEl.innerHTML = `
+                                <div class="transaction-icon" style="background: #e8f5e8;">💵</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Monthly Salary</div>
+                                    <div class="transaction-date">${new Date(transaction.timestamp).toLocaleDateString()}</div>
+                                </div>
+                                <div class="transaction-amount amount-positive">+$${transaction.amount}</div>
+                            `;
+                            
+                            salaryHistory.appendChild(transactionEl);
+                        }
+                    });
+                    
+                    if (!hasSalary) {
+                        salaryHistory.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">💵</div>
+                                <div>No salary history</div>
+                                <div style="font-size: 12px; margin-top: 5px;">Your salary payments will appear here</div>
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        // Generate Referral Code
+        function generateReferralCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // Save Profile
+        document.getElementById('save-profile').addEventListener('click', () => {
+            const fullName = document.getElementById('profile-fullname').value;
+            const phone = document.getElementById('profile-phone').value;
+            
+            if (!fullName || !phone) {
+                alert('Please fill all fields');
+                return;
+            }
+            
+            database.ref('users/' + currentUser).update({
+                fullName: fullName,
+                phone: phone
+            }).then(() => {
+                alert('Profile updated successfully!');
+            });
+        });
+        
+        // Change Password
+        document.getElementById('change-password').addEventListener('click', () => {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Please fill all fields');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match');
+                return;
+            }
+            
+            if (currentUserData.password !== currentPassword) {
+                alert('Current password is incorrect');
+                return;
+            }
+            
+            database.ref('users/' + currentUser).update({
+                password: newPassword
+            }).then(() => {
+                alert('Password changed successfully!');
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+            });
+        });
+    </script>
+</body>
+</html>
